@@ -1,3 +1,15 @@
+## MIDI Logger　Key-aware fork
+
+This is a fork of maybe-hello-world/midi-logger.
+
+This version adds key-aware ABC notation output:
+- Notes are spelled relative to the selected key
+- Accidentals are minimized based on the key context
+- Designed for use with existing `K:` headers in ABC blocks
+
+Original project:
+https://github.com/maybe-hello-world/midi-logger
+
 # MIDI Logger
 
 This is a plugin that uses the Web MIDI API to listen to MIDI messages and insert parsed pressed notes into the editor

@@ -1,4 +1,4 @@
-import { MarkdownView, Notice, Plugin, App, PluginSettingTab, Setting, Editor } from 'obsidian';
+import { MarkdownView, Notice, Modal, Plugin, App, PluginSettingTab, Setting, Editor } from 'obsidian';
 import { rawFormatter, scientificFormatter, ABCFormatter } from "./formatters";
 
 enum ExportType {
@@ -22,6 +22,16 @@ export default class MIDILogger extends Plugin {
 	enabled: boolean = false;
 	mainStatusBar: HTMLElement;
 	midiAccess: WebMidi.MIDIAccess;
+	currentKey: string = 'C';
+
+	private async promptKey(): Promise<string | null> {
+		return await new Promise(resolve => {
+			const modal = new KeySelectModal(this.app, this.currentKey);
+			modal.onClose = () => resolve(modal.result);
+			modal.open();
+		});
+	}
+
 
 	writeNoteToEditor(note: number) {
 		let noteString = '<UNKNOWN_FORMAT>';
@@ -33,8 +43,9 @@ export default class MIDILogger extends Plugin {
 				noteString = scientificFormatter.format(note, this.settings.separator);
 				break;
 			case ExportType.ABC:
-				noteString = ABCFormatter.format(note, this.settings.separator);
-				break;
+  				noteString = ABCFormatter.format(note, this.settings.separator, this.currentKey);
+  				break;
+
 		}
 
 		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -46,6 +57,12 @@ export default class MIDILogger extends Plugin {
 	}
 
 	async enable() {
+
+		const key = await this.promptKey();
+		if (!key) return;          // Cancelなら何もしない
+		this.currentKey = key;
+		new Notice(`Capture Key: ${this.currentKey}`);	
+
 		try {
 			this.midiAccess = await navigator.requestMIDIAccess();
 			const inputs = this.midiAccess.inputs.values();
@@ -64,8 +81,8 @@ export default class MIDILogger extends Plugin {
 					}
 				};
 			}
-			new Notice('MIDI Logger is active');
-			this.mainStatusBar.setText('MIDI Logger is active');
+			new Notice('Key-aware MIDI Logger Activated');
+			this.mainStatusBar.setText('Key-aware MIDI Logger is active');
 			this.enabled = true;
 		} catch (error) {
 			new Notice('Cannot open MIDI input port!');
@@ -79,7 +96,7 @@ export default class MIDILogger extends Plugin {
 				input.close();
 			}
 		}
-		new Notice('MIDI Logger is inactive');
+		new Notice('Key-aware MIDI Logger is inactive');
 		this.mainStatusBar.setText('');
 		this.enabled = false;
 	}
@@ -204,5 +221,47 @@ class MIDILoggerSettingTab extends PluginSettingTab {
 					this.plugin.settings.separator = value;
 					await this.plugin.saveSettings();
 				}));
+	}
+}
+
+
+
+class KeySelectModal extends Modal {
+	result: string | null = null;
+	private selected: string;
+
+	constructor(app: App, initialKey: string) {
+		super(app);
+		this.selected = initialKey;
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.empty();
+		contentEl.createEl('h3', { text: 'Select Key for Capture' });
+
+		const keys = ['C','G','D','A','E','B','F#','C#','F','Bb','Eb','Ab','Db','Gb','Cb'];
+
+		new Setting(contentEl)
+			.setName('Key')
+			.addDropdown(drop => {
+				keys.forEach(k => drop.addOption(k, k));
+				drop.setValue(this.selected);
+				drop.onChange(v => (this.selected = v));
+			});
+
+		const btnRow = contentEl.createDiv({ cls: 'modal-button-container' });
+
+		const ok = btnRow.createEl('button', { text: 'OK' });
+		ok.onclick = () => {
+			this.result = this.selected;
+			this.close();
+		};
+
+		const cancel = btnRow.createEl('button', { text: 'Cancel' });
+		cancel.onclick = () => {
+			this.result = null;
+			this.close();
+		};
 	}
 }

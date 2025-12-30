@@ -1,10 +1,11 @@
 {
-	"id": "midi-logger",
-	"name": "MIDI Logger",
-	"version": "0.1.2",
-	"minAppVersion": "1.0.0",
-	"description": "Insert parsed musical notes from MIDI input devices.",
-	"author": "@maybehelloworld",
-	"authorUrl": "https://github.com/maybe-hello-world",
-	"isDesktopOnly": false
+  "id": "midi-logger-keyaware",
+  "name": "MIDI Logger (Key-aware)",
+  "version": "0.1.0",
+  "minAppVersion": "1.0.0",
+  "description": "MIDI Logger plugin for Obsidian with key-aware ABC notation output.",
+  "author": "ShioriLaws (forked from maybe-hello-world)",
+  "authorUrl": "https://github.com/ShioriLaws/midi-logger",
+  "isDesktopOnly": true
 }
+
